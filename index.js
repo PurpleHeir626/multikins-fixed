@@ -118,15 +118,12 @@ ${json}
   memory[uid].facts.push(fact);
   saveMemory(config.index, memory);
 
-  return message.reply(`✅ Remembered: ${fact}`);
+  return message.reply(`Remembered: ${fact}`);
 }
 
 const reply = await sendToKindroid(message, config);
 message.reply(reply);
-
 client.login(config.token).catch(console.error);
 }
-
-bots.forEach(createBot);
 
   

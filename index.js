@@ -103,9 +103,9 @@ if (lowered === 'lexport') {
 name: `memory_bot${config.index}.json` }]
     });
   }
-  return message.reply(````json
+  return message.reply(```json
 ${json}
-````);
+```);
 }
 
     

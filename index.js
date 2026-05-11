@@ -1,42 +1,94 @@
+const { Client, GatewayIntentBits, Collection } = require('discord.js');
+const fs = require('fs');
+
+const bots = [
+  {
+    token: process.env.BOT_TOKEN_1,
+    kindroidId: process.env.KINDROID_AI_ID_1,
+    apiKey: process.env.KINDROID_API_KEY,
+    inferUrl: process.env.KINDROID_INFER_URL || 'https://api.kindroid.ai/v1/discord-bot',
+    index: 1,
+    memoryFile: 'memory_bot1.json'
+  }
+];
+
+function loadMemory(index) {
+  try {
+    return JSON.parse(fs.readFileSync(`memory_bot${index}.json`, 'utf8')) || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveMemory(index, memory) {
+  fs.writeFileSync(`memory_bot${index}.json`, JSON.stringify(memory, null, 2));
+}
+
+async function sendToKindroid(message, config) {
+  const memory = loadMemory(config.index);
+  const uid = message.author.id;
+  
+  if (!memory[uid]) memory[uid] = { facts: [], history: [] };
+  memory[uid].history.push({ role: 'user', content: message.content });
+  
+  try {
+    const response = await fetch(config.inferUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        kindroidId: config.kindroidId,
+        message: message.content,
+        memory: memory[uid]
+      })
+    });
+    
+    const data = await response.json();
+    const aiReply = data.reply || "No response";
+    
+    memory[uid].history.push({ role: 'assistant', content: aiReply });
+    saveMemory(config.index, memory);
+    
+    return aiReply;
+  } catch (error) {
+    console.error('Kindroid error:', error);
+    return "AI service error - check logs";
+  }
+}
+
 function createBot(config) {
   const client = new Client({
-    intents: [
-      GatewayIntentBits.Guilds,
-      GatewayIntentBits.GuildMessages,
-      GatewayIntentBits.MessageContent,
-      GatewayIntentBits.DirectMessages,
-    ],
-    partials: [Partials.Channel, Partials.Message],
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
   });
 
-  const memory = loadMemory(config.index);
+  client.once('ready', () => {
+    console.log(`Bot ${config.index} ready!`);
+  });
+
   let memorySaveEnabled = true;
 
-  client.on(Events.ClientReady, () => {
-    console.log(`[Bot ${config.index}] Logged in as ${client.user.tag}`);
-  });
-
-  client.on(Events.MessageCreate, async (message) => {
+  client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
-
-    const isDM = message.channel.type === 1;
-    const isMentioned = message.mentions.has(client.user);
-    if (!isDM && !isMentioned) return;
-
-    const content = message.content
-      .replace(`<@${client.user.id}>`, '')
-      .replace(`<@!${client.user.id}>`, '')
-      .trim();
-
-    if (content.toLowerCase() === '!sovereign') {
-      memorySaveEnabled = !memorySaveEnabled;
-      return message.reply(`Memory saving is now **${memorySaveEnabled ? 'ON' : 'OFF'}**.`);
+    
+    const lowered = message.content.toLowerCase().trim();
+    
+    if (lowered === 'memory on') {
+      memorySaveEnabled = true;
+      return message.reply("Memory saving is now **ON**.");
     }
-
-    if (content.toLowerCase() === '!export') {
+    if (lowered === 'memory off') {
+      memorySaveEnabled = false;
+      return message.reply("Memory saving is now **OFF**.");
+    }
+    
+    if (!memorySaveEnabled) return;
+    
+    if (lowered === 'lexport') {
       const mem = loadMemory(config.index);
-      if (!Object.keys(mem).length) return message.reply('No memory saved yet.');
       const json = JSON.stringify(mem, null, 2);
+      
       if (json.length > 1900) {
         return message.reply({
           content: 'Memory export:',
@@ -47,76 +99,29 @@ function createBot(config) {
 ${json}
 ````);
     }
-
-    if (content.toLowerCase().startsWith('!remember ')) {
-      const fact = content.slice(10).trim();
+    
+    if (lowered.startsWith('iremember ')) {
+      const fact = message.content.slice(10).trim();
       if (!fact) return message.reply('What should I remember?');
+      
       const uid = message.author.id;
-      if (!memory[uid]) memory[uid] = { facts: [], history: [] };
-      if (!memory[uid].facts) memory[uid].facts = [];
-      memory[uid].facts.push(fact);
-      saveMemory(config.index, memory);
-      return message.reply(`Got it! I'll remember: *${fact}*`);
-    }
+      const memory = loadMemory(config.index);
+      
+      if (lowered === 'lexport') {
+  const mem = loadMemory(config.index);
+  const json = JSON.stringify(mem, null, 2);
 
-    if (content.toLowerCase() === '!forget') {
-      const uid = message.author.id;
-      if (memory[uid]) {
-        delete memory[uid];
-        saveMemory(config.index, memory);
-      }
-      return message.reply('Your memory has been cleared.');
-    }
-
-    if (content.toLowerCase() === '!help') {
-      return message.reply(
-        '**Commands:**
-' +
-        '`!sovereign` — toggle memory saving on/off
-' +
-        '`!remember <text>` — save something to memory
-' +
-        '`!forget` — clear your memory
-' +
-        '`!export` — export all saved memory as JSON
-' +
-        '`!help` — show this list
-
-' +
-        'Just send any message (DM or @mention) to chat!'
-      );
-    }
-
-    if (!content) return;
-
-    try {
-      await message.channel.sendTyping();
-      const reply = await askKindroid(config.aiId, config.shareCode, content);
-      await message.reply(reply);
-
-      if (memorySaveEnabled) {
-        const uid = message.author.id;
-        if (!memory[uid]) memory[uid] = { facts: [], history: [] };
-        if (!memory[uid].history) memory[uid].history = [];
-        memory[uid].history.push({
-          user: content,
-          bot: reply,
-          ts: new Date().toISOString(),
-        });
-        if (memory[uid].history.length > 50) {
-          memory[uid].history = memory[uid].history.slice(-50);
-        }
-        saveMemory(config.index, memory);
-      }
-    } catch (err) {
-      console.error(`[Bot ${config.index}] Error:`, err.message);
-      await message.reply('Sorry, I had trouble connecting right now. Try again in a moment!');
-    }
-  });
-
-  client.login(config.token).catch((err) => {
-    console.error(`[Bot ${config.index}] Login failed:`, err.message);
-  });
-
-  return client;
+  if (json.length > 1900) {
+    return message.reply({
+      content: 'Memory export:',
+      files: [{ attachment: Buffer.from(json), name: `memory_bot${config.index}.json` }],
+    });
+  }
+  return message.reply(````json
+${json}
+````);
 }
+  client.login(config.token).catch(console.error);
+}
+
+bots.forEach(createBot);

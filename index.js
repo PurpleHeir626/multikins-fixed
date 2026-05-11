@@ -99,7 +99,8 @@ if (lowered === 'lexport') {
   if (json.length > 1900) {
     return message.reply({
       content: 'Memory export:',
-      files: [{ attachment: Buffer.from(json), name: `memory_bot${config.index}.json` }]
+      files: [{ attachment: Buffer.from(json), 
+name: `memory_bot${config.index}.json` }]
     });
   }
   return message.reply(````json

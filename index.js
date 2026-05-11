@@ -85,7 +85,7 @@ function createBot(config) {
     
     if (!memorySaveEnabled) return;
     
-        if (lowered === 'lexport') {
+         if (lowered === 'lexport') {
       const mem = loadMemory(config.index);
       const json = JSON.stringify(mem, null, 2);
 
@@ -108,6 +108,7 @@ ${json}
       const memory = loadMemory(config.index);
 
       if (!memory[uid]) memory[uid] = { facts: [], history: [] };
+      if (!memory[uid].facts) memory[uid].facts = [];
       memory[uid].facts.push(fact);
       saveMemory(config.index, memory);
 
@@ -120,5 +121,4 @@ ${json}
 
   client.login(config.token).catch(console.error);
 }
-
 bots.forEach(createBot);

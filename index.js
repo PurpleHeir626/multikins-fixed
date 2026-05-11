@@ -121,6 +121,7 @@ ${json}
 
   return message.reply(`✅ Remembered: ${fact}`);
 }
+
 const reply = await sendToKindroid(message, config);
 message.reply(reply);
 });

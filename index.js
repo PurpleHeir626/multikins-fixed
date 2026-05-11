@@ -118,8 +118,7 @@ ${json}
   memory[uid].facts.push(fact);
   saveMemory(config.index, memory);
 
-  return message.reply(`✅ Remembered: ${fact}`);
-`);
+    return message.reply(`✅ Remembered: ${fact}`);
 }
 
 const reply = await sendToKindroid(message, config);
@@ -130,6 +129,5 @@ client.login(config.token).catch(console.error);
 }
 
 bots.forEach(createBot);
-What to fix in your file
 
   

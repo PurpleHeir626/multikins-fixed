@@ -107,7 +107,6 @@ name: `memory_bot${config.index}.json` }]
 ${json}
 ```);
 }
-
       if (lowered.startsWith('iremember ')) {
   const fact = message.content.slice(10).trim();
   if (!fact) return message.reply('What should I remember?');
@@ -124,7 +123,7 @@ ${json}
 
 const reply = await sendToKindroid(message, config);
 message.reply(reply);
-});
+};
 
   client.login(config.token).catch(console.error);
 }

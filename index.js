@@ -108,8 +108,7 @@ ${json}
 ```);
 }
 
-    
-    if (lowered.startsWith('iremember ')) {
+      if (lowered.startsWith('iremember ')) {
   const fact = message.content.slice(10).trim();
   if (!fact) return message.reply('What should I remember?');
 

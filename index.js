@@ -85,10 +85,10 @@ function createBot(config) {
     
     if (!memorySaveEnabled) return;
     
-    if (lowered === 'lexport') {
+        if (lowered === 'lexport') {
       const mem = loadMemory(config.index);
       const json = JSON.stringify(mem, null, 2);
-      
+
       if (json.length > 1900) {
         return message.reply({
           content: 'Memory export:',
@@ -99,28 +99,25 @@ function createBot(config) {
 ${json}
 ````);
     }
-    
+
     if (lowered.startsWith('iremember ')) {
       const fact = message.content.slice(10).trim();
       if (!fact) return message.reply('What should I remember?');
-      
+
       const uid = message.author.id;
       const memory = loadMemory(config.index);
-      
-      if (lowered === 'lexport') {
-  const mem = loadMemory(config.index);
-  const json = JSON.stringify(mem, null, 2);
 
-  if (json.length > 1900) {
-    return message.reply({
-      content: 'Memory export:',
-      files: [{ attachment: Buffer.from(json), name: `memory_bot${config.index}.json` }],
-    });
-  }
-  return message.reply(````json
-${json}
-````);
-}
+      if (!memory[uid]) memory[uid] = { facts: [], history: [] };
+      memory[uid].facts.push(fact);
+      saveMemory(config.index, memory);
+
+      return message.reply(`✅ Remembered: ${fact}`);
+    }
+
+    const reply = await sendToKindroid(message, config);
+    message.reply(reply);
+  });
+
   client.login(config.token).catch(console.error);
 }
 

@@ -132,7 +132,7 @@ setTimeout(() => {
 }
 
 bots.filter(b => b.token && b.kindroidId).forEach((config, i) => {
-  setTimeout(() => createBot(config), i * 4000);
+  setTimeout(() => createBot(config), i * 6000);
 });
 
 // Health check server for Render free tier

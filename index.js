@@ -99,7 +99,6 @@ function createBot(config) {
   return message.reply(````json
 ${json}
 ````);
-}
    
   if (lowered.startsWith('iremember ')) {
       const fact = message.content.slice(10).trim();

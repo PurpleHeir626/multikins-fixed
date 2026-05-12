@@ -96,7 +96,7 @@ function createBot(config) {
     });
   }
 
-  return message.reply(````json
+ return message.reply(````json
 ${json}
 ````);
 }

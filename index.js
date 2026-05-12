@@ -120,7 +120,15 @@ function createBot(config) {
     message.reply(reply);
   });
 
-  client.login(config.token).catch(console.error);
+  client.login(config.token)
+  .then(() => console.log(`Bot ${config.index} login successful`))
+  .catch(err => console.error(`Bot ${config.index} login failed:`, err.message));
+
+setTimeout(() => {
+  if (!client.isReady()) {
+    console.error(`Bot ${config.index} timed out - still not connected after 30s`);
+  }
+}, 30000);
 }
 
 bots.filter(b => b.token && b.kindroidId).forEach(createBot);

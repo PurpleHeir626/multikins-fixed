@@ -123,7 +123,7 @@ function createBot(config) {
   client.login(config.token).catch(console.error);
 }
 
-bots.forEach(createBot);
+bots.filter(b => b.token && b.kindroidId).forEach(createBot);
 
 // Health check server for Render free tier
 const PORT = process.env.PORT || 3000;

@@ -27,10 +27,10 @@ function saveMemory(index, memory) {
 async function sendToKindroid(message, config) {
   const memory = loadMemory(config.index);
   const uid = message.author.id;
-  
+
   if (!memory[uid]) memory[uid] = { facts: [], history: [] };
   memory[uid].history.push({ role: 'user', content: message.content });
-  
+
   try {
     const response = await fetch(config.inferUrl, {
       method: 'POST',
@@ -44,13 +44,13 @@ async function sendToKindroid(message, config) {
         memory: memory[uid]
       })
     });
-    
+
     const data = await response.json();
     const aiReply = data.reply || "No response";
-    
+
     memory[uid].history.push({ role: 'assistant', content: aiReply });
     saveMemory(config.index, memory);
-    
+
     return aiReply;
   } catch (error) {
     console.error('Kindroid error:', error);
@@ -71,36 +71,36 @@ function createBot(config) {
 
   client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
-    
+
     const lowered = message.content.toLowerCase().trim();
-    
+
     if (lowered === 'memory on') {
       memorySaveEnabled = true;
       return message.reply("Memory saving is now **ON**.");
     }
+
     if (lowered === 'memory off') {
       memorySaveEnabled = false;
       return message.reply("Memory saving is now **OFF**.");
     }
-    
-       if (!memorySaveEnabled) return;
+
+    if (!memorySaveEnabled) return;
 
     if (lowered === 'lexport') {
-  const mem = loadMemory(config.index);
-  const json = JSON.stringify(mem, null, 2);
+      const mem = loadMemory(config.index);
+      const json = JSON.stringify(mem, null, 2);
 
-  if (json.length > 1900) {
-    return message.reply({
-      content: 'Memory export:',
-      files: [{ attachment: Buffer.from(json), name: `memory_bot${config.index}.json` }],
-    });
-  }
+      if (json.length > 1900) {
+        return message.reply({
+          content: 'Memory export:',
+          files: [{ attachment: Buffer.from(json), name: `memory_bot${config.index}.json` }],
+        });
+      }
 
-  return message.reply(
-  "```json\n" + json + "\n```"
-);
+      return message.reply("```json\n" + json + "\n```");
+    }  // ← closed the lexport block here
 
-if (lowered.startsWith('iremember ')) {
+    if (lowered.startsWith('iremember ')) {
       const fact = message.content.slice(10).trim();
       if (!fact) return message.reply('What should I remember?');
 
@@ -121,4 +121,5 @@ if (lowered.startsWith('iremember ')) {
 
   client.login(config.token).catch(console.error);
 }
-     bots.forEach(createBot);
+
+bots.forEach(createBot);

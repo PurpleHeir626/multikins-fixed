@@ -1,15 +1,16 @@
-const { Client, GatewayIntentBits, Collection } = require('discord.js');
+const { Client, GatewayIntentBits } = require('discord.js');
 const fs = require('fs');
+const http = require('http');
 
 const bots = [
-  {
-    token: process.env.BOT_TOKEN_1,
-    kindroidId: process.env.KINDROID_AI_ID_1,
-    apiKey: process.env.KINDROID_API_KEY,
-    inferUrl: process.env.KINDROID_INFER_URL || 'https://api.kindroid.ai/v1/discord-bot',
-    index: 1,
-    memoryFile: 'memory_bot1.json'
-  }
+  { token: process.env.BOT_TOKEN_1, kindroidId: process.env.KINDROID_AI_ID_1, apiKey: process.env.KINDROID_API_KEY, inferUrl: process.env.KINDROID_INFER_URL || 'https://api.kindroid.ai/v1/discord-bot', index: 1 },
+  { token: process.env.BOT_TOKEN_2, kindroidId: process.env.KINDROID_AI_ID_2, apiKey: process.env.KINDROID_API_KEY, inferUrl: process.env.KINDROID_INFER_URL || 'https://api.kindroid.ai/v1/discord-bot', index: 2 },
+  { token: process.env.BOT_TOKEN_3, kindroidId: process.env.KINDROID_AI_ID_3, apiKey: process.env.KINDROID_API_KEY, inferUrl: process.env.KINDROID_INFER_URL || 'https://api.kindroid.ai/v1/discord-bot', index: 3 },
+  { token: process.env.BOT_TOKEN_4, kindroidId: process.env.KINDROID_AI_ID_4, apiKey: process.env.KINDROID_API_KEY, inferUrl: process.env.KINDROID_INFER_URL || 'https://api.kindroid.ai/v1/discord-bot', index: 4 },
+  { token: process.env.BOT_TOKEN_5, kindroidId: process.env.KINDROID_AI_ID_5, apiKey: process.env.KINDROID_API_KEY, inferUrl: process.env.KINDROID_INFER_URL || 'https://api.kindroid.ai/v1/discord-bot', index: 5 },
+  { token: process.env.BOT_TOKEN_6, kindroidId: process.env.KINDROID_AI_ID_6, apiKey: process.env.KINDROID_API_KEY, inferUrl: process.env.KINDROID_INFER_URL || 'https://api.kindroid.ai/v1/discord-bot', index: 6 },
+  { token: process.env.BOT_TOKEN_7, kindroidId: process.env.KINDROID_AI_ID_7, apiKey: process.env.KINDROID_API_KEY, inferUrl: process.env.KINDROID_INFER_URL || 'https://api.kindroid.ai/v1/discord-bot', index: 7 },
+  { token: process.env.BOT_TOKEN_8, kindroidId: process.env.KINDROID_AI_ID_8, apiKey: process.env.KINDROID_API_KEY, inferUrl: process.env.KINDROID_INFER_URL || 'https://api.kindroid.ai/v1/discord-bot', index: 8 },
 ];
 
 function loadMemory(index) {
@@ -98,7 +99,7 @@ function createBot(config) {
       }
 
       return message.reply("```json\n" + json + "\n```");
-    }  // ← closed the lexport block here
+    }
 
     if (lowered.startsWith('iremember ')) {
       const fact = message.content.slice(10).trim();
@@ -123,3 +124,9 @@ function createBot(config) {
 }
 
 bots.forEach(createBot);
+
+// Health check server for Render free tier
+const PORT = process.env.PORT || 3000;
+http.createServer((req, res) => res.end('OK')).listen(PORT, () => {
+  console.log(`Health check server on port ${PORT}`);
+});

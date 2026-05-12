@@ -131,7 +131,9 @@ setTimeout(() => {
 }, 30000);
 }
 
-bots.filter(b => b.token && b.kindroidId).forEach(createBot);
+bots.filter(b => b.token && b.kindroidId).forEach((config, i) => {
+  setTimeout(() => createBot(config), i * 4000);
+});
 
 // Health check server for Render free tier
 const PORT = process.env.PORT || 3000;

@@ -96,10 +96,9 @@ function createBot(config) {
     });
   }
 
-  return message.reply(````json
-${json}
-````);
-}
+  return message.reply(
+  "```json\n" + json + "\n```"
+);
 
 if (lowered.startsWith('iremember ')) {
       const fact = message.content.slice(10).trim();

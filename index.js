@@ -86,20 +86,20 @@ function createBot(config) {
        if (!memorySaveEnabled) return;
 
     if (lowered === 'lexport') {
-      const mem = loadMemory(config.index);
-      const json = JSON.stringify(mem, null, 2);
+  const mem = loadMemory(config.index);
+  const json = JSON.stringify(mem, null, 2);
 
-      if (json.length > 1900) {
-        return message.reply({
-          content: 'Memory export:',
-          files: [{ attachment: Buffer.from(json), name: `memory_bot${config.index}.json` }],
-        });
-      }
+  if (json.length > 1900) {
+    return message.reply({
+      content: 'Memory export:',
+      files: [{ attachment: Buffer.from(json), name: `memory_bot${config.index}.json` }],
+    });
+  }
 
-      return message.reply(````json
+  return message.reply(````json
 ${json}
 ````);
-    }
+}
 
     if (lowered.startsWith('iremember ')) {
       const fact = message.content.slice(10).trim();

@@ -83,9 +83,9 @@ function createBot(config) {
       return message.reply("Memory saving is now **OFF**.");
     }
     
-    if (!memorySaveEnabled) return;
-    
-         if (lowered === 'lexport') {
+       if (!memorySaveEnabled) return;
+
+    if (lowered === 'lexport') {
       const mem = loadMemory(config.index);
       const json = JSON.stringify(mem, null, 2);
 
@@ -95,6 +95,7 @@ function createBot(config) {
           files: [{ attachment: Buffer.from(json), name: `memory_bot${config.index}.json` }],
         });
       }
+
       return message.reply(````json
 ${json}
 ````);
@@ -121,4 +122,4 @@ ${json}
 
   client.login(config.token).catch(console.error);
 }
-bots.forEach(createBot);
+     bots.forEach(createBot);

@@ -1,4 +1,3 @@
-[bot]
 NAME=MultiKins
 DESCRIPTION=Multi Kindroid Bot
 MAIN=index.js

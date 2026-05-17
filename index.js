@@ -32,7 +32,6 @@ async function sendToKindroid(message, config) {
   if (!memory[uid]) memory[uid] = { facts: [], history: [] };
   memory[uid].history.push({ role: 'user', content: message.content });
 
-  // Use share code if available, otherwise fall back to kindroidId
   const identifier = config.shareCode || config.kindroidId;
 
   try {
@@ -57,7 +56,8 @@ async function sendToKindroid(message, config) {
     }
 
     const data = await response.json();
-    const aiReply = data.reply || "No response";
+    console.debug(`Bot ${config.index} Kindroid response:`, JSON.stringify(data));
+    const aiReply = data.reply || data.content || data.text || "No response";
 
     memory[uid].history.push({ role: 'assistant', content: aiReply });
     saveMemory(config.index, memory);
@@ -78,7 +78,7 @@ function createBot(config) {
     ]
   });
 
-  client.once('ready', () => {
+  client.once('clientReady', () => {
     console.log(`Bot ${config.index} ready! Logged in as ${client.user.tag}`);
   });
 
@@ -87,9 +87,15 @@ function createBot(config) {
   client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
 
+    // Only respond when bot is @-mentioned
+    if (!message.mentions.has(client.user)) return;
+
     console.log(`Bot ${config.index} received message from ${message.author.username}: "${message.content.substring(0, 80)}"`);
 
     const lowered = message.content.toLowerCase().trim();
+
+    // Remove the @-mention from the content so the AI doesn't see it
+    const cleanContent = message.content.replace(new RegExp(`<@!?${client.user.id}>\\s*`), '').trim();
 
     if (lowered === '!ping') {
       try {
@@ -148,7 +154,8 @@ function createBot(config) {
       return;
     }
 
-    const reply = await sendToKindroid(message, config);
+    // Use cleanContent (without the @mention) for the AI
+    const reply = await sendToKindroid({ ...message, content: cleanContent }, config);
     try {
       await message.reply(reply);
     } catch (err) {
@@ -163,12 +170,6 @@ function createBot(config) {
   client.login(config.token)
     .then(() => console.log(`Bot ${config.index} login successful`))
     .catch(err => console.error(`Bot ${config.index} login failed:`, err.message));
-
-  setTimeout(() => {
-    if (!client.isReady()) {
-      console.error(`Bot ${config.index} timed out - still not connected after 30s`);
-    }
-  }, 30000);
 }
 
 bots.filter(b => b.token && b.kindroidId).forEach((config, i) => {

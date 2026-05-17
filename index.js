@@ -30,7 +30,6 @@ async function sendToKindroid(message, config) {
   const uid = message.author.id;
   if (!memory[uid]) memory[uid] = { facts: [], history: [] };
   memory[uid].history.push({ role: 'user', content: message.content });
-  const identifier = config.shareCode || config.kindroidId;
   try {
     const response = await fetch(config.inferUrl, {
       method: 'POST',
@@ -39,10 +38,9 @@ async function sendToKindroid(message, config) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        kindroidId: identifier,
         shareCode: config.shareCode,
-        message: message.content,
-        memory: memory[uid]
+        requester: uid,
+        message: message.content
       })
     });
     if (!response.ok) {
@@ -51,7 +49,7 @@ async function sendToKindroid(message, config) {
       return `Sorry, error ${response.status}`;
     }
     const data = await response.json();
-    console.log(`Bot ${config.index} Kindroid data keys: ${Object.keys(data)}`);
+    console.log(`Bot ${config.index} Kindroid response: ${JSON.stringify(data)}`);
     const aiReply = data.reply || data.content || data.text || "No response";
     memory[uid].history.push({ role: 'assistant', content: aiReply });
     saveMemory(config.index, memory);
@@ -67,7 +65,8 @@ function createBot(config) {
     intents: [
       GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildMessages,
-      GatewayIntentBits.MessageContent
+      GatewayIntentBits.MessageContent,
+      GatewayIntentBits.GuildMembers
     ]
   });
 

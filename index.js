@@ -29,7 +29,10 @@ async function sendToKindroid(message, config) {
   const memory = loadMemory(config.index);
   const uid = message.author.id;
   if (!memory[uid]) memory[uid] = { facts: [], history: [] };
+  const lastMessages = memory[uid].history.slice(-30);
+
   memory[uid].history.push({ role: 'user', content: message.content });
+
   try {
     const response = await fetch(config.inferUrl, {
       method: 'POST',
@@ -38,9 +41,13 @@ async function sendToKindroid(message, config) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        shareCode: config.shareCode,
-        requester: uid,
-        message: message.content
+        share_code: config.shareCode,
+        enable_filter: true,
+        conversation: lastMessages.map(m => ({
+          username: message.author.username || 'user',
+          text: m.content,
+          timestamp: new Date().toISOString()
+        }))
       })
     });
     if (!response.ok) {
@@ -49,7 +56,6 @@ async function sendToKindroid(message, config) {
       return `Sorry, error ${response.status}`;
     }
     const data = await response.json();
-    console.log(`Bot ${config.index} Kindroid response: ${JSON.stringify(data)}`);
     const aiReply = data.reply || data.content || data.text || "No response";
     memory[uid].history.push({ role: 'assistant', content: aiReply });
     saveMemory(config.index, memory);
@@ -107,4 +113,3 @@ const PORT = process.env.PORT || 3000;
 http.createServer((req, res) => res.end('OK')).listen(PORT, () => {
   console.log(`Health check on port ${PORT}`);
 });
-

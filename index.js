@@ -4,14 +4,14 @@ const fs = require('fs');
 const http = require('http');
 const path = require('path');
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.PORT || 8080;
 http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end('OK');
 }).listen(PORT, () => console.log(`Health check running on port ${PORT}`));
 
-const KINDROID_API_KEY = process.env.KINDROID_API_KEY;
-const KINDROID_INFER_URL = process.env.KINDROID_INFER_URL || 'https://api.kindroid.ai/v1/discord-bot';
+const KINDROID_API_KEY = process.KINDROID_API_KEY;
+const KINDROID_INFER_URL = process.KINDROID_INFER_URL || 'https://api.kindroid.ai/v1/discord-bot';
 
 if (!KINDROID_API_KEY) {
   console.error('MISSING: KINDROID_API_KEY');
@@ -21,14 +21,14 @@ if (!KINDROID_API_KEY) {
 function loadBotConfigs() {
   const configs = [];
   for (let i = 1; i <= 10; i++) {
-    const token = process.env[`BOT_TOKEN_${i}`];
-    const shareCode = process.env[`SHARED_AI_CODE_${i}`];
+    const token = process[`BOT_TOKEN_${i}`];
+    const shareCode = process[`SHARED_AI_CODE_${i}`];
     if (!token || !shareCode) continue;
     configs.push({
       index: i,
       token,
       shareCode,
-      enableFilter: process.env[`ENABLE_FILTER_${i}`] !== 'false',
+      enableFilter: process[`ENABLE_FILTER_${i}`] !== 'false',
     });
   }
   return configs;
@@ -124,9 +124,7 @@ function createBot(config) {
           files: [{ attachment: Buffer.from(json), name: `memory_bot${config.index}.json` }],
         });
       }
-      return message.reply(````json
-${json}
-````);
+      return message.reply('```json\n' + json + '\n```');
     }
 
     if (content.toLowerCase().startsWith('!remember ')) {
@@ -151,19 +149,12 @@ ${json}
 
     if (content.toLowerCase() === '!help') {
       return message.reply(
-        '**Commands:**
-' +
-          '`!sovereign` — toggle memory saving on/off
-' +
-          '`!remember <text>` — save something to memory
-' +
-          '`!forget` — clear your memory
-' +
-          '`!export` — export all saved memory as JSON
-' +
-          '`!help` — show this list
-
-' +
+        '**Commands:**\n' +
+          '`!sovereign` — toggle memory saving on/off\n' +
+          '`!remember <text>` — save something to memory\n' +
+          '`!forget` — clear your memory\n' +
+          '`!export` — export all saved memory as JSON\n' +
+          '`!help` — show this list\n\n' +
           'Just send any message (DM or @mention) to chat!'
       );
     }

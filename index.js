@@ -106,4 +106,10 @@ function createBot(config) {
 }
 
 bots.filter(b => b.token && b.kindroidId).forEach((config, i) => {
-  setTimeout(() => createBot(config), i
+  setTimeout(() => createBot(config), i * 3000);
+});
+
+const PORT = process.env.PORT || 3000;
+http.createServer((req, res) => res.end('OK')).listen(PORT, () => {
+  console.log(`Health check on port ${PORT}`);
+});

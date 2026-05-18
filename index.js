@@ -9,10 +9,11 @@ http.createServer((req, res) => {
   res.end('OK');
 }).listen(PORT, () => console.log(`Health check running on port ${PORT}`));
 
-const KINDROID_API_KEY = process.KINDROID_API_KEY;
+// Env vars or fallback placeholders — replace these with your real values
+const KINDROID_API_KEY = process.KINDROID_API_KEY || 'REPLACE_WITH_YOUR_API_KEY';
 const KINDROID_INFER_URL = process.KINDROID_INFER_URL || 'https://api.kindroid.ai/v1/discord-bot';
 
-if (!KINDROID_API_KEY) {
+if (!KINDROID_API_KEY || KINDROID_API_KEY === 'REPLACE_WITH_YOUR_API_KEY') {
   console.error('MISSING: KINDROID_API_KEY');
   process.exit(1);
 }
@@ -20,14 +21,14 @@ if (!KINDROID_API_KEY) {
 function loadBotConfigs() {
   const configs = [];
   for (let i = 1; i <= 10; i++) {
-    const token = process[`BOT_TOKEN_${i}`];
-    const shareCode = process[`SHARED_AI_CODE_${i}`];
-    if (!token || !shareCode) continue;
+    const token = process[`BOT_TOKEN_${i}`] || `REPLACE_WITH_TOKEN_${i}`;
+    const shareCode = process[`SHARED_AI_CODE_${i}`] || `REPLACE_WITH_SHARE_CODE_${i}`;
+    if (!token || !shareCode || token.includes('REPLACE_')) continue;
     configs.push({
       index: i,
       token,
       shareCode,
-      enableFilter: process[`ENABLE_FILTER_${i}`] !== 'false',
+      enableFilter: true,
     });
   }
   return configs;

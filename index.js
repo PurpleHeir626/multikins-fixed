@@ -42,7 +42,7 @@ async function sendToKindroid(message, config) {
       },
       body: JSON.stringify({
         share_code: config.shareCode,
-        enable_filter: true,
+        enable_filter: false,
         conversation: lastMessages.map(m => ({
           username: message.author.username || 'user',
           text: m.content,

@@ -3,14 +3,14 @@ const fs = require('fs');
 const http = require('http');
 
 const bots = [
-  { token: 'YOUR_BOT_TOKEN_1', kindroidId: 'YOUR_KINDROID_AI_ID_1', shareCode: 'YOUR_SHARE_CODE_1', apiKey: 'YOUR_API_KEY', inferUrl: 'https://api.kindroid.ai/v1/discord-bot', index: 1 },
-  { token: 'YOUR_BOT_TOKEN_2', kindroidId: 'YOUR_KINDROID_AI_ID_2', shareCode: 'YOUR_SHARE_CODE_2', apiKey: 'YOUR_API_KEY', inferUrl: 'https://api.kindroid.ai/v1/discord-bot', index: 2 },
-  { token: 'YOUR_BOT_TOKEN_3', kindroidId: 'YOUR_KINDROID_AI_ID_3', shareCode: 'YOUR_SHARE_CODE_3', apiKey: 'YOUR_API_KEY', inferUrl: 'https://api.kindroid.ai/v1/discord-bot', index: 3 },
-  { token: 'YOUR_BOT_TOKEN_4', kindroidId: 'YOUR_KINDROID_AI_ID_4', shareCode: 'YOUR_SHARE_CODE_4', apiKey: 'YOUR_API_KEY', inferUrl: 'https://api.kindroid.ai/v1/discord-bot', index: 4 },
-  { token: 'YOUR_BOT_TOKEN_5', kindroidId: 'YOUR_KINDROID_AI_ID_5', shareCode: 'YOUR_SHARE_CODE_5', apiKey: 'YOUR_API_KEY', inferUrl: 'https://api.kindroid.ai/v1/discord-bot', index: 5 },
-  { token: 'YOUR_BOT_TOKEN_6', kindroidId: 'YOUR_KINDROID_AI_ID_6', shareCode: 'YOUR_SHARE_CODE_6', apiKey: 'YOUR_API_KEY', inferUrl: 'https://api.kindroid.ai/v1/discord-bot', index: 6 },
-  { token: 'YOUR_BOT_TOKEN_7', kindroidId: 'YOUR_KINDROID_AI_ID_7', shareCode: 'YOUR_SHARE_CODE_7', apiKey: 'YOUR_API_KEY', inferUrl: 'https://api.kindroid.ai/v1/discord-bot', index: 7 },
-  { token: 'YOUR_BOT_TOKEN_8', kindroidId: 'YOUR_KINDROID_AI_ID_8', shareCode: 'YOUR_SHARE_CODE_8', apiKey: 'YOUR_API_KEY', inferUrl: 'https://api.kindroid.ai/v1/discord-bot', index: 8 },
+  { token: 'BOT_TOKEN_1', kindroidId: 'KINDROID_AI_ID_1', shareCode: '_SHARE_CODE_1', apiKey: 'KINDROID_API_KEY', inferUrl: 'KINDROID_INFER_URL', index: 1 },
+  { token: 'BOT_TOKEN_2', kindroidId: 'KINDROID_AI_ID_2', shareCode: '_SHARE_CODE_2', apiKey: 'KINDROID_API_KEY', inferUrl: 'KINDROID_INFER_URL', index: 2 },
+  { token: 'BOT_TOKEN_3', kindroidId: 'KINDROID_AI_ID_3', shareCode: '_SHARE_CODE_3', apiKey: 'KINDROID_API_KEY', inferUrl: 'KINDROID_INFER_URL', index: 3 },
+  { token: 'BOT_TOKEN_4', kindroidId: 'KINDROID_AI_ID_4', shareCode: '_SHARE_CODE_4', apiKey: 'KINDROID_API_KEY', inferUrl: 'KINDROID_INFER_URL', index: 4 },
+  { token: 'BOT_TOKEN_5', kindroidId: 'KINDROID_AI_ID_5', shareCode: '_SHARE_CODE_5', apiKey: 'KINDROID_API_KEY', inferUrl: 'KINDROID_INFER_URL', index: 5 },
+  { token: 'BOT_TOKEN_6', kindroidId: 'KINDROID_AI_ID_6', shareCode: '_SHARE_CODE_6', apiKey: 'KINDROID_API_KEY', inferUrl: 'KINDROID_INFER_URL', index: 6 },
+  { token: 'BOT_TOKEN_7', kindroidId: 'KINDROID_AI_ID_7', shareCode: '_SHARE_CODE_7', apiKey: 'KINDROID_API_KEY', inferUrl: 'KINDROID_INFER_URL', index: 7 },
+  { token: 'BOT_TOKEN_8', kindroidId: 'KINDROID_AI_ID_8', shareCode: '_SHARE_CODE_8', apiKey: 'KINDROID_API_KEY', inferUrl: 'KINDROID_INFER_URL', index: 8 },
 ];
 
 function loadMemory(index) {

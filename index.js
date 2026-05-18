@@ -215,3 +215,4 @@ if (configs.length === 0) {
 
 console.log(`Starting ${configs.length} bot(s)...`);
 configs.forEach(createBot);
+

@@ -1,69 +1,89 @@
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, Events } = require('discord.js');
+const fetch = require('node-fetch');
 const fs = require('fs');
 const http = require('http');
+const path = require('path');
 
-const bots = [
-  { token: 'BOT_TOKEN_1', kindroidId: 'KINDROID_AI_ID_1', shareCode: '_SHARE_CODE_1', apiKey: 'KINDROID_API_KEY', inferUrl: 'KINDROID_INFER_URL', index: 1 },
-  { token: 'BOT_TOKEN_2', kindroidId: 'KINDROID_AI_ID_2', shareCode: '_SHARE_CODE_2', apiKey: 'KINDROID_API_KEY', inferUrl: 'KINDROID_INFER_URL', index: 2 },
-  { token: 'BOT_TOKEN_3', kindroidId: 'KINDROID_AI_ID_3', shareCode: '_SHARE_CODE_3', apiKey: 'KINDROID_API_KEY', inferUrl: 'KINDROID_INFER_URL', index: 3 },
-  { token: 'BOT_TOKEN_4', kindroidId: 'KINDROID_AI_ID_4', shareCode: '_SHARE_CODE_4', apiKey: 'KINDROID_API_KEY', inferUrl: 'KINDROID_INFER_URL', index: 4 },
-  { token: 'BOT_TOKEN_5', kindroidId: 'KINDROID_AI_ID_5', shareCode: '_SHARE_CODE_5', apiKey: 'KINDROID_API_KEY', inferUrl: 'KINDROID_INFER_URL', index: 5 },
-  { token: 'BOT_TOKEN_6', kindroidId: 'KINDROID_AI_ID_6', shareCode: '_SHARE_CODE_6', apiKey: 'KINDROID_API_KEY', inferUrl: 'KINDROID_INFER_URL', index: 6 },
-  { token: 'BOT_TOKEN_7', kindroidId: 'KINDROID_AI_ID_7', shareCode: '_SHARE_CODE_7', apiKey: 'KINDROID_API_KEY', inferUrl: 'KINDROID_INFER_URL', index: 7 },
-  { token: 'BOT_TOKEN_8', kindroidId: 'KINDROID_AI_ID_8', shareCode: '_SHARE_CODE_8', apiKey: 'KINDROID_API_KEY', inferUrl: 'KINDROID_INFER_URL', index: 8 },
-];
+const PORT = process.env.PORT || 8080;
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('OK');
+}).listen(PORT, () => console.log(`Health check running on port ${PORT}`));
 
-function loadMemory(index) {
-  try {
-    return JSON.parse(fs.readFileSync(`memory_bot${index}.json`, 'utf8')) || {};
-  } catch {
-    return {};
-  }
+const KINDROID_API_KEY = process.env.KINDROID_API_KEY;
+const KINDROID_INFER_URL = process.env.KINDROID_INFER_URL || 'https://api.kindroid.ai/v1/discord-bot';
+
+if (!KINDROID_API_KEY) {
+  console.error('MISSING: KINDROID_API_KEY');
+  process.exit(1);
 }
 
-function saveMemory(index, memory) {
-  fs.writeFileSync(`memory_bot${index}.json`, JSON.stringify(memory, null, 2));
-}
-
-async function sendToKindroid(message, config) {
-  const memory = loadMemory(config.index);
-  const uid = message.author.id;
-  if (!memory[uid]) memory[uid] = { facts: [], history: [] };
-  const lastMessages = memory[uid].history.slice(-30);
-
-  memory[uid].history.push({ role: 'user', content: message.content });
-
-  try {
-    const response = await fetch(config.inferUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${config.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        share_code: config.shareCode,
-        enable_filter: false,
-        conversation: lastMessages.map(m => ({
-          username: message.author.username || 'user',
-          text: m.content,
-          timestamp: new Date().toISOString()
-        }))
-      })
+function loadBotConfigs() {
+  const configs = [];
+  for (let i = 1; i <= 10; i++) {
+    const token = process.env[`BOT_TOKEN_${i}`];
+    const aiId = process.env[`KINDROID_AI_ID_${i}`];
+    const shareCode = process.env[`SHARED_AI_CODE_${i}`];
+    if (!token || (!aiId && !shareCode)) continue;
+    configs.push({
+      index: i,
+      token,
+      aiId: aiId || '',
+      shareCode: shareCode || '',
+      enableFilter: process.env[`ENABLE_FILTER_${i}`] !== 'false',
     });
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Bot ${config.index} Kindroid HTTP error ${response.status}: ${errorText}`);
-      return `Sorry, error ${response.status}`;
-    }
-    const data = await response.json();
-    const aiReply = data.reply || data.content || data.text || "No response";
-    memory[uid].history.push({ role: 'assistant', content: aiReply });
-    saveMemory(config.index, memory);
-    return aiReply;
-  } catch (error) {
-    console.error(`Bot ${config.index} Kindroid error:`, error.message);
-    return "Trouble connecting to AI.";
   }
+  return configs;
+}
+
+function memoryPath(i) {
+  return path.join('/app', `brain_core_${i}.json`);
+}
+
+function loadMemory(i) {
+  try {
+    if (fs.existsSync(memoryPath(i))) {
+      return JSON.parse(fs.readFileSync(memoryPath(i), 'utf8'));
+    }
+  } catch (_) {}
+  return {};
+}
+
+function saveMemory(i, mem) {
+  try {
+    fs.writeFileSync(memoryPath(i), JSON.stringify(mem, null, 2));
+  } catch (e) {
+    console.error(`Failed to save memory for bot ${i}:`, e.message);
+  }
+}
+
+async function askKindroid(config, conversation) {
+  const lastUsername = conversation.length ? conversation[conversation.length - 1].username : '';
+  const hashedUsername = Buffer.from(lastUsername).toString('base64');
+
+  const body = {
+    share_code: config.shareCode || config.aiId,
+    enable_filter: config.enableFilter,
+    conversation,
+  };
+
+  const res = await fetch(KINDROID_INFER_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${KINDROID_API_KEY}`,
+      'X-Kindroid-Requester': hashedUsername,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => res.statusText);
+    throw new Error(`Kindroid API error ${res.status}: ${text}`);
+  }
+
+  const data = await res.json();
+  return data.reply || data.message || data.response || JSON.stringify(data);
 }
 
 function createBot(config) {
@@ -72,44 +92,146 @@ function createBot(config) {
       GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.MessageContent,
-      GatewayIntentBits.GuildMembers
-    ]
+      GatewayIntentBits.DirectMessages,
+    ],
+    partials: [Partials.Channel, Partials.Message],
   });
 
-  client.once('clientReady', () => {
-    console.log(`Bot ${config.index} ready! Logged in as ${client.user.tag}`);
+  const memory = loadMemory(config.index);
+  let memorySaveEnabled = true;
+
+  client.on(Events.ClientReady, () => {
+    console.log(`[Bot ${config.index}] Logged in as ${client.user.tag}`);
   });
 
-  client.on('messageCreate', async (message) => {
-    console.log(`[BOT ${config.index}] MSG: "${message.content}" by ${message.author.username}`);
+  client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot) return;
 
-    const cleanContent = message.content.replace(new RegExp(`<@!?${client.user.id}>\\s*`), '').trim();
+    const isDM = message.channel.type === 1;
+    const isMentioned = client.user ? message.mentions.has(client.user) : false;
+    if (!isDM && !isMentioned) return;
 
-    if (cleanContent.toLowerCase() === '!ping') {
-      try { await message.reply(`Bot ${config.index} is online!`); }
-      catch (err) { console.error(`Bot ${config.index} reply error:`, err.message); }
-      return;
+    const content = message.content
+      .replace(`<@${client.user.id}>`, '')
+      .replace(`<@!${client.user.id}>`, '')
+      .trim();
+
+    if (content.toLowerCase() === '!sovereign') {
+      memorySaveEnabled = !memorySaveEnabled;
+      return message.reply(`Memory saving is now **${memorySaveEnabled ? 'ON' : 'OFF'}**.`);
     }
 
+    if (content.toLowerCase() === '!export') {
+      const mem = loadMemory(config.index);
+      const json = JSON.stringify(mem, null, 2);
+
+      if (!Object.keys(mem).length) return message.reply('No memory saved yet.');
+
+      if (json.length > 1900) {
+        return message.reply({
+          content: 'Memory export:',
+          files: [{ attachment: Buffer.from(json), name: `memory_bot${config.index}.json` }],
+        });
+      }
+
+      return message.reply(````json
+${json}
+````);
+    }
+
+    if (content.toLowerCase().startsWith('!remember ')) {
+      const fact = content.slice(10).trim();
+      if (!fact) return message.reply('What should I remember?');
+
+      const uid = message.author.id;
+      if (!memory[uid]) memory[uid] = { facts: [], history: [] };
+      if (!memory[uid].facts) memory[uid].facts = [];
+      memory[uid].facts.push(fact);
+      saveMemory(config.index, memory);
+      return message.reply(`Got it! I'll remember: *${fact}*`);
+    }
+
+    if (content.toLowerCase() === '!forget') {
+      const uid = message.author.id;
+      if (memory[uid]) {
+        delete memory[uid];
+        saveMemory(config.index, memory);
+      }
+      return message.reply('Your memory has been cleared.');
+    }
+
+    if (content.toLowerCase() === '!help') {
+      return message.reply(
+        '**Commands:**
+' +
+        '`!sovereign` — toggle memory saving on/off
+' +
+        '`!remember <text>` — save something to memory
+' +
+        '`!forget` — clear your memory
+' +
+        '`!export` — export all saved memory as JSON
+' +
+        '`!help` — show this list
+
+' +
+        'Just send any message (DM or @mention) to chat!'
+      );
+    }
+
+    if (!content) return;
+
     try {
-      const reply = await sendToKindroid({ ...message, content: cleanContent }, config);
+      await message.channel.sendTyping();
+
+      const uid = message.author.id;
+      if (!memory[uid]) memory[uid] = { facts: [], history: [] };
+      if (!memory[uid].history) memory[uid].history = [];
+
+      memory[uid].history.push({ role: 'user', content });
+
+      const conversation = memory[uid].history.slice(-20).map((item, i) => ({
+        username: i % 2 === 0 ? message.author.username : client.user.username,
+        text: item.content || item.bot || item.user || '',
+        timestamp: new Date().toISOString(),
+      }));
+
+      const reply = await askKindroid(config, conversation);
+
       await message.reply(reply);
+
+      if (memorySaveEnabled) {
+        memory[uid].history.push({
+          role: 'assistant',
+          content: reply,
+          ts: new Date().toISOString(),
+        });
+
+        if (memory[uid].history.length > 50) {
+          memory[uid].history = memory[uid].history.slice(-50);
+        }
+
+        saveMemory(config.index, memory);
+      }
     } catch (err) {
-      console.error(`Bot ${config.index} failed:`, err.message);
+      console.error(`[Bot ${config.index}] Error:`, err.message);
+      await message.reply('Sorry, I had trouble connecting right now. Try again in a moment!');
     }
   });
 
-  client.login(config.token)
-    .then(() => console.log(`Bot ${config.index} login OK`))
-    .catch(err => console.error(`Bot ${config.index} login FAIL:`, err.message));
+  client.login(config.token).catch((err) => {
+    console.error(`[Bot ${config.index}] Login failed:`, err.message);
+  });
+
+  return client;
 }
 
-bots.filter(b => b.token && b.kindroidId).forEach((config, i) => {
-  setTimeout(() => createBot(config), i * 3000);
-});
+const configs = loadBotConfigs();
 
-const PORT = process.env.PORT || 3000;
-http.createServer((req, res) => res.end('OK')).listen(PORT, () => {
-  console.log(`Health check on port ${PORT}`);
-});
+if (configs.length === 0) {
+  console.error('No bots configured. Set BOT_TOKEN_1 and SHARED_AI_CODE_1 or KINDROID_AI_ID_1 at minimum.');
+  process.exit(1);
+}
+
+console.log(`Starting ${configs.length} bot(s)...`);
+configs.forEach(createBot);

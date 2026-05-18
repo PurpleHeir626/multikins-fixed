@@ -3,32 +3,31 @@ const fs = require('fs');
 const http = require('http');
 const path = require('path');
 
-const PORT = process.PORT || 8080;
+const PORT = process.env.PORT || 8080;
 http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end('OK');
 }).listen(PORT, () => console.log(`Health check running on port ${PORT}`));
 
-// Env vars or fallback placeholders — replace these with your real values
-const KINDROID_API_KEY = process.KINDROID_API_KEY || 'REPLACE_WITH_YOUR_API_KEY';
-const KINDROID_INFER_URL = process.KINDROID_INFER_URL || 'https://api.kindroid.ai/v1/discord-bot';
+const KINDROID_API_KEY = process.env.KINDROID_API_KEY;
+const KINDROID_INFER_URL = process.env.KINDROID_INFER_URL || 'https://api.kindroid.ai/v1/discord-bot';
 
-if (!KINDROID_API_KEY || KINDROID_API_KEY === 'REPLACE_WITH_YOUR_API_KEY') {
-  console.error('MISSING: KINDROID_API_KEY');
+if (!KINDROID_API_KEY) {
+  console.error('MISSING: KINDROID_API_KEY - set it in Render Environment Variables');
   process.exit(1);
 }
 
 function loadBotConfigs() {
   const configs = [];
-  for (let i = 1; i <= 10; i++) {
-    const token = process[`BOT_TOKEN_${i}`] || `REPLACE_WITH_TOKEN_${i}`;
-    const shareCode = process[`SHARED_AI_CODE_${i}`] || `REPLACE_WITH_SHARE_CODE_${i}`;
-    if (!token || !shareCode || token.includes('REPLACE_')) continue;
+  for (let i = 1; i <= 8; i++) {
+    const token = process.env[`BOT_TOKEN_${i}`];
+    const shareCode = process.env[`SHARED_AI_CODE_${i}`];
+    if (!token || !shareCode) continue;
     configs.push({
       index: i,
       token,
       shareCode,
-      enableFilter: true,
+      enableFilter: process.env[`ENABLE_FILTER_${i}`] !== 'false',
     });
   }
   return configs;
@@ -210,7 +209,7 @@ function createBot(config) {
 const configs = loadBotConfigs();
 
 if (configs.length === 0) {
-  console.error('No bots configured. Set BOT_TOKEN_1 and SHARED_AI_CODE_1 at minimum.');
+  console.error('No bots configured. Set BOT_TOKEN_1 and SHARED_AI_CODE_1 at minimum in Render Environment Variables.');
   process.exit(1);
 }
 

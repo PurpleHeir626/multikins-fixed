@@ -153,18 +153,18 @@ ${json}
       return message.reply(
         '**Commands:**
 ' +
-        '`!sovereign` — toggle memory saving on/off
+          '`!sovereign` — toggle memory saving on/off
 ' +
-        '`!remember <text>` — save something to memory
+          '`!remember <text>` — save something to memory
 ' +
-        '`!forget` — clear your memory
+          '`!forget` — clear your memory
 ' +
-        '`!export` — export all saved memory as JSON
+          '`!export` — export all saved memory as JSON
 ' +
-        '`!help` — show this list
+          '`!help` — show this list
 
 ' +
-        'Just send any message (DM or @mention) to chat!'
+          'Just send any message (DM or @mention) to chat!'
       );
     }
 

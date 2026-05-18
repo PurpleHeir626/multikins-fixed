@@ -13,13 +13,12 @@ const KINDROID_API_KEY = process.env.KINDROID_API_KEY;
 const KINDROID_INFER_URL = process.env.KINDROID_INFER_URL || 'https://api.kindroid.ai/v1/discord-bot';
 
 if (!KINDROID_API_KEY) {
-  console.error('MISSING: KINDROID_API_KEY - set it in Render Environment Variables');
-  process.exit(1);
+  console.warn('KINDROID_API_KEY not set — AI replies disabled.');
 }
 
 function loadBotConfigs() {
   const configs = [];
-  for (let i = 1; i <= 8; i++) {
+  for (let i = 1; i <= 7; i++) {
     const token = process.env[`BOT_TOKEN_${i}`];
     const shareCode = process.env[`SHARED_AI_CODE_${i}`];
     if (!token || !shareCode) continue;
@@ -55,6 +54,9 @@ function saveMemory(i, mem) {
 }
 
 async function askKindroid(config, conversation, requester) {
+  if (!KINDROID_API_KEY) {
+    return 'AI service is not configured. Please set KINDROID_API_KEY.';
+  }
   const res = await fetch(KINDROID_INFER_URL, {
     method: 'POST',
     headers: {
@@ -150,7 +152,7 @@ function createBot(config) {
       return message.reply(
         '**Commands:**\n' +
           '`!sovereign` — toggle memory saving on/off\n' +
-          '`!remember <text>` — save something to memory\n' +
+          '`!remember ` — save something to memory\n' +
           '`!forget` — clear your memory\n' +
           '`!export` — export all saved memory as JSON\n' +
           '`!help` — show this list\n\n' +
@@ -162,35 +164,23 @@ function createBot(config) {
 
     try {
       await message.channel.sendTyping();
-
       const uid = message.author.id;
       if (!memory[uid]) memory[uid] = { facts: [], history: [] };
       if (!memory[uid].history) memory[uid].history = [];
-
       memory[uid].history.push({ role: 'user', content });
-
       const conversation = memory[uid].history.slice(-30).map((item, i) => ({
         username: i % 2 === 0 ? message.author.username : client.user.username,
         text: item.content || '',
         timestamp: new Date().toISOString(),
       }));
-
       const requester = Buffer.from(message.author.id).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 32);
       const reply = await askKindroid(config, conversation, requester);
-
       await message.reply(reply);
-
       if (memorySaveEnabled) {
-        memory[uid].history.push({
-          role: 'assistant',
-          content: reply,
-          ts: new Date().toISOString(),
-        });
-
+        memory[uid].history.push({ role: 'assistant', content: reply, ts: new Date().toISOString(), });
         if (memory[uid].history.length > 50) {
           memory[uid].history = memory[uid].history.slice(-50);
         }
-
         saveMemory(config.index, memory);
       }
     } catch (err) {
@@ -202,17 +192,13 @@ function createBot(config) {
   client.login(config.token).catch((err) => {
     console.error(`[Bot ${config.index}] Login failed:`, err.message);
   });
-
   return client;
 }
 
 const configs = loadBotConfigs();
-
 if (configs.length === 0) {
-  console.error('No bots configured. Set BOT_TOKEN_1 and SHARED_AI_CODE_1 at minimum in Render Environment Variables.');
-  process.exit(1);
+  console.warn('No bots configured — add BOT_TOKEN_1 and SHARED_AI_CODE_1 at minimum in Render Environment Variables.');
+} else {
+  console.log(`Starting ${configs.length} bot(s)...`);
+  configs.forEach(createBot);
 }
-
-console.log(`Starting ${configs.length} bot(s)...`);
-configs.forEach(createBot);
-

@@ -1,5 +1,4 @@
 const { Client, GatewayIntentBits, Partials, Events } = require('discord.js');
-const fetch = require('node-fetch');
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
